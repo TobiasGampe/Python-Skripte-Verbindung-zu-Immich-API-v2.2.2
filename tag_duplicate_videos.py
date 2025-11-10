@@ -137,13 +137,19 @@ def find_duplicate_videos(assets):
     return video_ids_to_tag
 
 def main():
-    api_key = os.environ.get("IMMICH_API_KEY")
-    api_url = os.environ.get("IMMICH_API_URL")
+    # --- BITTE HIER IHRE DATEN EINTRAGEN ---
+    # Tragen Sie hier Ihren Immich API-Schlüssel in Anführungszeichen ein.
+    api_key = "IHR_API_SCHLÜSSEL_HIER_EINFÜGEN"
+
+    # Tragen Sie hier die vollständige URL zu Ihrer Immich API ein.
+    api_url = "http://IHRE_IP_ADRESSE:2283/api"
+    # -----------------------------------------
+
     tag_name = "Duplicate Video From Google Photos"
 
-    if not api_key or not api_url:
-        logger.error("Die Umgebungsvariablen IMMICH_API_KEY und IMMICH_API_URL sind erforderlich.")
-        logger.info("Beispiel: export IMMICH_API_URL='http://192.168.178.28:2283/api'")
+    # Überprüfung, ob die Werte geändert wurden
+    if api_key == "IHR_API_SCHLÜSSEL_HIER_EINFÜGEN" or api_url == "http://IHRE_IP_ADRESSE:2283/api":
+        logger.error("FEHLER: Bitte öffnen Sie das Skript und tragen Sie Ihren API-Schlüssel und Ihre URL in der 'main'-Funktion ein.")
         return
 
     immich = Immich(api_url, api_key)
