@@ -26,22 +26,46 @@ class Immich:
         logger.info(f"Immich-Client initialisiert für URL: {self.api_url}")
 
     def get_all_assets(self):
-        logger.info('⬇️  Alle Assets werden abgerufen...')
-        try:
-            # Dieser Endpunkt ist fundamental für Immich und sollte in v2.2.2 existieren.
-            response = requests.get(f"{self.api_url}/assets", headers=self.headers, timeout=30)
-            response.raise_for_status()
-            logger.info("✅ Assets erfolgreich abgerufen.")
-            return response.json()
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 401:
-                logger.error("❌ Fehler beim Abrufen der Assets: Der API-Schlüssel ist ungültig oder hat nicht die erforderlichen Berechtigungen.")
-            else:
-                logger.error(f"❌ Fehler beim Abrufen der Assets: Unerwarteter HTTP-Fehler: {e.response.status_code} {e.response.reason}")
-            return None
-        except requests.exceptions.RequestException as e:
-            logger.error(f"❌ Fehler beim Abrufen der Assets: Es konnte keine Verbindung zum Server hergestellt werden: {e}")
-            return None
+        logger.info('⬇️  Alle Assets werden abgerufen (dies kann bei großen Bibliotheken eine Weile dauern)...')
+
+        all_assets = []
+        page = 1
+
+        while True:
+            try:
+                # Wir verwenden /search/metadata, da dies der dokumentierte Weg ist, um Assets aufzulisten.
+                payload = {"page": page, "size": 1000}
+                response = requests.post(f"{self.api_url}/search/metadata", headers=self.headers, json=payload, timeout=60)
+                response.raise_for_status()
+
+                data = response.json()
+                assets_on_page = data.get('assets', {}).get('items', [])
+
+                if not assets_on_page:
+                    # Keine weiteren Assets gefunden, Schleife beenden.
+                    break
+
+                all_assets.extend(assets_on_page)
+                logger.info(f"   {len(all_assets)} Assets bisher abgerufen...")
+
+                # Überprüfen, ob es eine nächste Seite gibt
+                if not data.get('assets', {}).get('nextPage'):
+                    break
+
+                page += 1
+
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 401:
+                    logger.error("❌ Fehler beim Abrufen der Assets: Der API-Schlüssel ist ungültig.")
+                else:
+                    logger.error(f"❌ Fehler beim Abrufen der Assets: HTTP-Fehler: {e.response.status_code}")
+                return None
+            except requests.exceptions.RequestException as e:
+                logger.error(f"❌ Fehler beim Abrufen der Assets: Verbindungsfehler: {e}")
+                return None
+
+        logger.info(f"✅ Insgesamt {len(all_assets)} Assets abgerufen.")
+        return all_assets
 
     def get_all_tags(self):
         try:
