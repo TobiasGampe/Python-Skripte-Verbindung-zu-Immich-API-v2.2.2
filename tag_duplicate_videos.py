@@ -16,13 +16,42 @@ logger = logging.getLogger(__name__)
 from urllib.parse import urlparse
 
 class Immich:
-    def __init__(self, url: str, key: str):
-        self.api_url = f'{urlparse(url).scheme}://{urlparse(url).netloc}/api'
+    def __init__(self, base_url: str, key: str):
+        self.base_url = base_url.rstrip('/')
+        self.api_url = None
         self.headers = {
           'x-api-key': key,
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         }
+        self._discover_api_path()
+
+    def _discover_api_path(self):
+        """Automatically find the correct API endpoint."""
+        logger.info("Attempting to discover the correct API path...")
+        # Common paths for the Immich API
+        possible_paths = ['/api', '']
+
+        for path in possible_paths:
+            # We use the ping endpoint as it's a reliable, unauthenticated way to check connectivity.
+            test_url = f"{self.base_url}{path}/server-info/ping"
+            logger.info(f"  Trying URL: {test_url}")
+            try:
+                # Use a short timeout to avoid long waits
+                response = requests.get(test_url, timeout=5)
+                # Check for a successful response and the expected "pong" content
+                if response.status_code == 200 and response.json().get("res") == "pong":
+                    self.api_url = f"{self.base_url}{path}"
+                    logger.info(f"  Successfully connected! API path found: {self.api_url}")
+                    return
+            except requests.exceptions.RequestException as e:
+                logger.info(f"  Connection attempt failed for path '{path}': {e}")
+                continue
+
+        # If the loop completes without finding a valid path
+        logger.error("Could not discover a working Immich API path.")
+        logger.error(f"Please ensure your IMMICH_API_URL ('{self.base_url}') is correct and the server is running.")
+        raise ConnectionError("Failed to connect to a valid Immich API endpoint.")
 
     def get_all_assets(self):
         logger.info(f'⬇️  Fetching all assets... This may take a while for large libraries.')
