@@ -4,8 +4,8 @@ import requests
 import os
 from datetime import datetime
 
-API_KEY = 'HBKYhoHijPDBsxvzm2eQPCTX3qRXosU8DLIJq2ypHC8'                # replace with a valid api key
-BASE_URL = 'http://192.168.178.28:2283/api'  # replace as needed
+API_KEY = 'YOUR_API_KEY'                # replace with a valid api key
+BASE_URL = 'http://127.0.0.1:2283/api'  # replace as needed
 
 
 def upload(file):
@@ -33,6 +33,7 @@ def upload(file):
 
     print(response.json())
     # {'id': 'ef96f635-61c7-4639-9e60-61a11c4bbfba', 'duplicate': False}
+
 
 
 upload(r'C:\Users\Admin\Downloads\City Sky.png')
